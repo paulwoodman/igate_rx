@@ -117,7 +117,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash -c "rtl_fm -f $FREQ - | direwolf -c $USER_HOME/direwolf.conf -r 24000 -D 1 - > $USER_HOME/direwolf.log"
+ExecStart=/bin/bash -c "rtl_fm -s 22050 -g 49 -f $FREQ 2X /dev/null | direwolf -c $USER_HOME/direwolf.conf -r 24000 -D 1 - > $USER_HOME/direwolf.log"
 Restart=always
 User=$USER
 Group=$USER
