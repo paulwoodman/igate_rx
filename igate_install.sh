@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # Updating the package lists to get the latest version of repositories
@@ -68,7 +67,7 @@ cat <<EOL > direwolf.conf
 MYCALL $CALLSIGN
 IGSERVER noam.aprs2.net
 IGLOGIN $CALLSIGN $MAGICBUG_PASSWORD
-PBEACON sendto=IG compress=1 delay=00:15 every=30:00 symbol="igate" overlay=X lat=$LAT long=$LONG comment="Direwolf Rx-only igate"
+PBEACON sendto=IG compress=1 delay=00:15 every=30:00 symbol="igate" overlay=X lat=$LAT long=$LONG comment="Direwatch Rx-only igate"
 AGWPORT 8000
 KISSPORT 8001
 ADEVICE null
