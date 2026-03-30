@@ -1,14 +1,5 @@
 #!/bin/bash
 
-# Check if the script is running in an interactive shell
-if ! [ -t 0 ]; then
-  echo "This script requires an interactive terminal session."
-  exit 1
-fi
-
-# Debug: Start of interactive session
-echo "Interactive terminal session detected. Proceeding with prompts..."
-
 # Prompt the user for their callsign and magicbug password
 echo -n "Enter your callsign: "
 read CALLSIGN
@@ -36,7 +27,6 @@ read LONG
 LONG=${LONG:-"-122.935"}  # Default to -122.935 if no input is given
 echo "User entered longitude: $LONG"  # Debug output
 
-# Rest of the script continues below...
 # Updating the package lists to get the latest version of repositories
 echo "Updating package list..."
 sudo apt update -y
