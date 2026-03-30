@@ -1,10 +1,14 @@
 #!/bin/bash
 
-# Updating the package lists to get the latest version of repositories
+# -------------------------
+# iGate Install Script with Read-Only Root (OverlayFS)
+# -------------------------
+
+set -e
+
 echo "Updating package list..."
 sudo apt update -y
 
-# Installing Direwolf, RTL-SDR, and required dependencies
 echo "Installing Direwolf, RTL-SDR, and required packages..."
 sudo apt-get install -y \
   direwolf \
@@ -15,101 +19,61 @@ sudo apt-get install -y \
   python3-pil \
   python3-pyinotify \
   python3-numpy \
-  python3-venv  # Install python3-venv for virtual environments
+  python3-venv
 
-# Verifying if the installation was successful
 if command -v direwolf &>/dev/null && command -v rtl_test &>/dev/null; then
     echo "Installation successful!"
 else
-    echo "There was an error during the installation process."
+    echo "Error during installation. Exiting."
     exit 1
 fi
 
-# Enabling SPI by uncommenting the dtparam=spi=on line in /boot/firmware/config.txt
+# Enable SPI
 echo "Enabling SPI interface..."
-
-# Uncomment dtparam=spi=on if it's commented out
-sudo sed -i '/#dtparam=spi=on/s/^#//g' /boot/firmware/config.txt
-
-# Verify the line has been uncommented (optional step)
-if grep -q "dtparam=spi=on" /boot/firmware/config.txt; then
-    echo "SPI interface enabled successfully!"
-else
-    echo "Failed to enable SPI interface."
+sudo sed -i '/#dtparam=spi=on/s/^#//' /boot/firmware/config.txt
+if ! grep -q "^dtparam=spi=on" /boot/firmware/config.txt; then
+    echo "Failed to enable SPI. Exiting."
     exit 1
 fi
 
-# Prompt the user for their callsign and aprs password
-echo -n "Enter your callsign: (UPPERCASE ONLY!!) "
-read CALLSIGN
+# Prompt user for iGate info
+read -p "Enter your callsign (UPPERCASE ONLY): " CALLSIGN
+read -s -p "Enter your APRS password: " MAGICBUG_PASSWORD
+echo
+read -p "Enter frequency (default 144.39M US, 144.80M UK): " FREQ
+FREQ=${FREQ:-144.39M}
+read -p "Enter latitude (default 39.911): " LAT
+LAT=${LAT:-39.911}
+read -p "Enter longitude (default -122.935): " LONG
+LONG=${LONG:-"-122.935"}
 
-echo -n "Enter your APRS password: (https://apps.magicbug.co.uk/passcode/) "
-read -s MAGICBUG_PASSWORD
-echo  # just to add a new line after the password input for neatness
-
-# Prompt the user for the frequency (default US frequency is 144.39M)
-echo -n "Enter the frequency (default is 144.39M for US, 144.80M for UK or type your own): "
-read FREQ
-FREQ=${FREQ:-144.39M}  # If user doesn't provide input, default to 144.39M
-
-# Prompt the user for their latitude and longitude
-echo -n "Enter your latitude (https://www.latlong.net/): "
-read LAT
-LAT=${LAT:-39.911}  # Default to 39.911 if no input is given
-
-echo -n "Enter your longitude (https://www.latlong.net/): "
-read LONG
-LONG=${LONG:-"-122.935"}  # Default to -122.935 if no input is given
-
-# Get the username of the current user
 USER=$(whoami)
+USER_HOME=$(eval echo ~$USER)
 
-# Create the direwolf.conf file with dynamic content
-echo "Generating direwolf.conf file..."
-cat <<EOL > direwolf.conf
+# Generate direwolf.conf
+echo "Generating direwolf.conf..."
+cat <<EOL > $USER_HOME/direwolf.conf
 MYCALL $CALLSIGN
 IGSERVER noam.aprs2.net
 IGLOGIN $CALLSIGN $MAGICBUG_PASSWORD
-PBEACON sendto=IG compress=1 delay=00:15 every=30:00 symbol="igate" overlay=X lat=$LAT long=$LONG comment="Direwolf Rx-only igate"
+PBEACON sendto=IG compress=1 delay=00:15 every=30:00 symbol="igate" overlay=R lat=$LAT long=$LONG comment="Direwolf Rx-only igate"
 AGWPORT 8000
 KISSPORT 8001
 ADEVICE null
 EOL
 
-echo "direwolf.conf file has been created successfully!"
+touch $USER_HOME/direwolf.log
+sudo chown $USER:$USER $USER_HOME/direwolf.log
 
-# Give the user write permissions to the direwolf.log file
-USER_HOME=$(eval echo ~$USER)
-touch /tmp/direwolf.log
-sudo chown $USER:$USER /tmp/direwolf.log
-
-# Create a Python virtual environment named 'igate'
+# Create Python virtual environment
 echo "Creating Python virtual environment 'igate'..."
-python3 -m venv igate
-
-# Activate the virtual environment
-echo "Activating the virtual environment 'igate'..."
-source igate/bin/activate
-
-# Install aprslib within the virtual environment
-echo "Installing aprslib in the virtual environment..."
+python3 -m venv $USER_HOME/igate
+source $USER_HOME/igate/bin/activate
 pip install aprslib
-
-# Verifying installation of aprslib
-if python -c "import aprslib" &>/dev/null; then
-    echo "aprslib installation successful!"
-else
-    echo "Failed to install aprslib."
-    exit 1
-fi
-
-# Deactivate the virtual environment
-echo "Deactivating the virtual environment..."
 deactivate
 
-# Create a systemd service to run rtl_fm and direwolf on boot
-echo "Creating systemd service to start rtl_fm and Direwolf on boot..."
-
+# Create systemd service
+echo "Creating systemd service..."
 sudo tee /etc/systemd/system/rtl_fm_direwolf.service > /dev/null <<EOL
 [Unit]
 Description=RTL-SDR and Direwolf Service for APRS
@@ -117,12 +81,10 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash -c "rtl_fm -s 22050 -g 49 -f $FREQ 2X /dev/null | direwolf -c $USER_HOME/direwolf.conf -r 24000 -D 1 - > /tmp/direwolf.log"
+ExecStart=/bin/bash -c "rtl_fm -s 22050 -g 49 -f $FREQ 2X - | direwolf -c $USER_HOME/direwolf.conf -r 22050 -D 1 - > /tmp/direwolf.log 2>&1"
 Restart=always
 User=$USER
 Group=$USER
-StandardOutput=append:/tmp/direwolf.log
-StandardError=append:/tmp/direwolf.log
 WorkingDirectory=$USER_HOME
 Environment=HOME=$USER_HOME
 
@@ -130,36 +92,15 @@ Environment=HOME=$USER_HOME
 WantedBy=multi-user.target
 EOL
 
-# Reload systemd to apply the new service configuration
 sudo systemctl daemon-reload
-
-# Enable the service to start at boot
 sudo systemctl enable rtl_fm_direwolf.service
-
-# Start the service immediately to check if everything is working
 sudo systemctl start rtl_fm_direwolf.service
 
-# Verify the service status
-echo "Verifying the service status..."
-sudo systemctl status rtl_fm_direwolf.service
+# -------------------------
+# Enable Overlay File System (read-only root)
+# -------------------------
+echo "Enabling OverlayFS for read-only root..."
+sudo raspi-config nonint do_overlayfs 0
 
-echo "rtl_fm and Direwolf service created and running!"
-
-# Final installation message
-echo "Installation complete!"
-echo "Please reboot your Raspberry Pi to start the service and ensure everything is running smoothly."
-
-# Remount the root filesystem as read-only after installation
-echo "Setting root filesystem to read-only to prevent SD card corruption..."
-
-# Remount the root filesystem as read-only
-sudo mount -o remount,ro /
-
-# Ensure /home, /var/log, and /tmp are read-write for logging and configuration
-sudo mount -o remount,rw /home
-sudo mount -o remount,rw /var/log
-sudo mount -o remount,rw /tmp
-
-# Suggest a reboot
-echo "Filesystem is now read-only, but some directories remain writable for logging and configuration."
-echo "You can reboot your Raspberry Pi now to make sure everything is set up properly."
+echo "OverlayFS enabled. SD writes are now protected, root is read-only."
+echo "Reboot the Raspberry Pi to apply read-only root and start the iGate service."
