@@ -13,7 +13,24 @@ This guide will walk you through installing and setting up the iGate (APRS RX-on
 
 To begin, download the installation script to your Raspberry Pi using one of the following commands:
 
-**Option 1: Using `wget`**
+**Download the installer:**
 
 ```bash
 wget https://raw.githubusercontent.com/paulwoodman/igate_rx/main/igate_install.sh
+```
+or
+
+```bash
+curl -O https://raw.githubusercontent.com/paulwoodman/igate_rx/main/igate_install.sh
+```
+
+## Step 2: Make the installer execuitable 
+```
+chmod +x igate_install.sh
+```
+
+## Step 3: Run the installer
+```
+./igate_install.sh
+```
+
