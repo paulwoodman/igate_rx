@@ -6,6 +6,28 @@ if ! [ -t 0 ]; then
   exit 1
 fi
 
+# Prompt the user for their callsign and magicbug password
+echo -n "Enter your callsign: "
+read CALLSIGN
+
+echo -n "Enter your Magicbug password: "
+read -s MAGICBUG_PASSWORD
+echo  # just to add a new line after the password input for neatness
+
+# Prompt the user for the frequency (default US frequency is 144.39M)
+echo -n "Enter the frequency (default is 144.39M for US, or type your own): "
+read FREQ
+FREQ=${FREQ:-144.39M}  # If user doesn't provide input, default to 144.39M
+
+# Prompt the user for their latitude and longitude
+echo -n "Enter your latitude (default is 39.911): "
+read LAT
+LAT=${LAT:-39.911}  # Default to 39.911 if no input is given
+
+echo -n "Enter your longitude (default is -122.935): "
+read LONG
+LONG=${LONG:-"-122.935"}  # Default to -122.935 if no input is given
+
 # Updating the package lists to get the latest version of repositories
 echo "Updating package list..."
 sudo apt update -y
@@ -44,28 +66,6 @@ else
     echo "Failed to enable SPI interface."
     exit 1
 fi
-
-# Prompt the user for their callsign and magicbug password
-echo -n "Enter your callsign: "
-read CALLSIGN
-
-echo -n "Enter your Magicbug password: "
-read -s MAGICBUG_PASSWORD
-echo  # just to add a new line after the password input for neatness
-
-# Prompt the user for the frequency (default US frequency is 144.39M)
-echo -n "Enter the frequency (default is 144.39M for US, or type your own): "
-read FREQ
-FREQ=${FREQ:-144.39M}  # If user doesn't provide input, default to 144.39M
-
-# Prompt the user for their latitude and longitude
-echo -n "Enter your latitude (default is 39.911): "
-read LAT
-LAT=${LAT:-39.911}  # Default to 39.911 if no input is given
-
-echo -n "Enter your longitude (default is -122.935): "
-read LONG
-LONG=${LONG:-"-122.935"}  # Default to -122.935 if no input is given
 
 # Create the direwolf.conf file with dynamic content
 echo "Generating direwolf.conf file..."
