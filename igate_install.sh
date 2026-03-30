@@ -61,6 +61,9 @@ echo -n "Enter your longitude (https://www.latlong.net/): "
 read LONG
 LONG=${LONG:-"-122.935"}  # Default to -122.935 if no input is given
 
+# Get the username of the current user
+USER=$(whoami)
+
 # Create the direwolf.conf file with dynamic content
 echo "Generating direwolf.conf file..."
 cat <<EOL > direwolf.conf
@@ -74,6 +77,11 @@ ADEVICE null
 EOL
 
 echo "direwolf.conf file has been created successfully!"
+
+# Give the user write permissions to the direwolf.log file
+USER_HOME=$(eval echo ~$USER)
+touch $USER_HOME/direwolf.log
+sudo chown $USER:$USER $USER_HOME/direwolf.log
 
 # Create a Python virtual environment named 'igate'
 echo "Creating Python virtual environment 'igate'..."
@@ -99,10 +107,6 @@ fi
 echo "Deactivating the virtual environment..."
 deactivate
 
-# Get the user's home directory for log file creation
-USER_HOME=$(eval echo ~$USER)
-LOG_FILE="$USER_HOME/direwolf.log"
-
 # Create a systemd service to run rtl_fm and direwolf on boot
 echo "Creating systemd service to start rtl_fm and Direwolf on boot..."
 
@@ -113,12 +117,12 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash -c "rtl_fm -s 22050 -g 49 -f $FREQ 2X /dev/null | direwolf -t 0 -r 22050 - > $LOG_FILE"
+ExecStart=/bin/bash -c "rtl_fm -s 22050 -g 49 -f $FREQ 2X /dev/null | direwolf -t 0 -r 22050 - > $USER_HOME/direwolf.log"
 Restart=always
 User=$USER
 Group=$USER
-StandardOutput=append:$LOG_FILE
-StandardError=append:$LOG_FILE
+StandardOutput=append:$USER_HOME/direwolf.log
+StandardError=append:$USER_HOME/direwolf.log
 WorkingDirectory=$USER_HOME
 Environment=HOME=$USER_HOME
 
