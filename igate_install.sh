@@ -39,25 +39,25 @@ else
     exit 1
 fi
 
-# Prompt the user for their callsign and magicbug password
-echo -n "Enter your callsign: "
+# Prompt the user for their callsign and aprs password
+echo -n "Enter your callsign: (UPPERCASE ONLY!!) "
 read CALLSIGN
 
-echo -n "Enter your Magicbug password: "
+echo -n "Enter your APRS password: (https://apps.magicbug.co.uk/passcode/) "
 read -s MAGICBUG_PASSWORD
 echo  # just to add a new line after the password input for neatness
 
 # Prompt the user for the frequency (default US frequency is 144.39M)
-echo -n "Enter the frequency (default is 144.39M for US, or type your own): "
+echo -n "Enter the frequency (default is 144.39M for US, 144.80M for UK or type your own): "
 read FREQ
 FREQ=${FREQ:-144.39M}  # If user doesn't provide input, default to 144.39M
 
 # Prompt the user for their latitude and longitude
-echo -n "Enter your latitude (default is 39.911): "
+echo -n "Enter your latitude (https://www.latlong.net/): "
 read LAT
 LAT=${LAT:-39.911}  # Default to 39.911 if no input is given
 
-echo -n "Enter your longitude (default is -122.935): "
+echo -n "Enter your longitude (https://www.latlong.net/): "
 read LONG
 LONG=${LONG:-"-122.935"}  # Default to -122.935 if no input is given
 
@@ -67,7 +67,7 @@ cat <<EOL > direwolf.conf
 MYCALL $CALLSIGN
 IGSERVER noam.aprs2.net
 IGLOGIN $CALLSIGN $MAGICBUG_PASSWORD
-PBEACON sendto=IG compress=1 delay=00:15 every=30:00 symbol="igate" overlay=X lat=$LAT long=$LONG comment="Direwatch Rx-only igate"
+PBEACON sendto=IG compress=1 delay=00:15 every=30:00 symbol="igate" overlay=X lat=$LAT long=$LONG comment="Direwolf Rx-only igate"
 AGWPORT 8000
 KISSPORT 8001
 ADEVICE null
