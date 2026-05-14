@@ -1,91 +1,41 @@
----
-version: 3
+# Since Ansible 2.12 (core):
+# To generate an example config file (a "disabled" one with all default settings, commented out):
+#               $ ansible-config init --disabled > ansible.cfg
+#
+# Also you can now have a more complete file by including existing plugins:
+# ansible-config init --disabled -t all > ansible.cfg
 
-build_arg_defaults:
-  ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: '--upgrade'
+# For previous versions of Ansible you can check for examples in the 'stable' branches of each version
+# Note that this file was always incomplete  and lagging changes to configuration settings
 
-dependencies:
-  python_interpreter:
-    python_path: /usr/bin/python3.12
-  galaxy:
-    collections:
-      # begin manulife collections
-      - name: ansible.posix
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/rh-certified/
-      - name: ansible.utils
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/rh-certified/
-      - name: ansible.windows
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/rh-certified/
-      - name: azure.azcollection
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/rh-certified/
-      - name: community.crypto
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/community/
-      - name: community.general
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/community/
-      - name: community.hashi_vault
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/community/
-      - name: community.mysql
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/community/
-      - name: community.postgresql
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/community/
-      - name: community.windows
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/community/
-      - name: cyberark.pas
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/rh-certified/
-      - name: ibm.power_aix
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/rh-certified/
-      - name: infra.controller_configuration
-        # source: https://hub.prod.ansible.manulife.com/api/galaxy/content/validated/
-  python:
-    - selinux
-    - dnspython
-    - psutil
-    - netaddr
-    # begin manulife python modules
-    - six
-    ## - awxkit
-    - pandas
-    - pywinrm
-    - pypsrp[kerberos]
-    - pywinrm[kerberos]
-    - pymssql
-  system:
-    - findutils [platform:rpm]
-    - systemd-devel [platform:rpm]
-    - python3.12-devel [platform:rpm]
-    - gcc [platform:rpm]
-    # begin manulife rpms
-    - krb5-devel [platform:rpm]
-    - krb5-libs [platform:rpm]
-    - krb5-workstation [platform:rpm]
-    - libxml2-devel [platform:rpm]
-    - jq [platform:rpm]
-    - wget [platform:rpm]
-    - crypto-policies-scripts [platform:rpm]
+# for example, for 2.9: https://github.com/ansible/ansible/blob/stable-2.9/examples/ansible.cfg
 
-images:
-  base_image:
-    name: registry.redhat.io/ansible-automation-platform-26/ee-minimal-rhel9:latest
+## Custom Config
+[galaxy]
+# server_list = rh-certified_repo,validated_pah,community_repo
+server_list = automationhub,validated_ah,galaxy
 
-options:
-  package_manager_path: /usr/bin/microdnf
+[galaxy_server.galaxy]
+url=https://galaxy.ansible.com/
 
-additional_build_files:
-  - src: /etc/ansible/ansible.cfg
-    dest: configs
-  - src: /opt/exec_envs/pah_certs/aap26_ca.cert
-    dest: configs
+[galaxy_server.automationhub]
+url=https://console.redhat.com/api/automation-hub/
+auth_url=https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+token=
 
-additional_build_steps:
-  prepend_galaxy:
-    - ADD _build/configs/ansible.cfg ${HOME}/.ansible.cfg
-    - ADD _build/configs/aap26_ca.cert /etc/pki/ca-trust/source/anchors/aap26_ca.cert
+[galaxy_server.validated_ah]
+url=https://console.redhat.com/api/automation-hub/content/validated/
+auth_url=https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+token=
 
-  append_final: |
-    ENV ACCEPT_EULA=Y
-    RUN curl -o /etc/yum.repos.d/microsoft-prod.repo https://packages.microsoft.com/config/rhel/9/prod.repo && \
-        microdnf -y install powershell azure-cli mssql-tools18 unixODBC-devel && \
-        microdnf clean all && \
-        rm -rf /var/{cache,log} /var/lib/{dnf,rhsm} && \
-        az extension add --upgrade -n resource-graph --debug && \
-        az extension add --upgrade -n notification-hub
+[galaxy_server.community_repo]
+url=https://aap26.client.example.com/api/galaxy/content/community/
+token=
+
+[galaxy_server.rh-certified_repo]
+url=https://aap26.client.example.com/api/galaxy/content/rh-certified/
+token=
+
+[galaxy_server.validated_pah]
+url=https://aap26.client.example.com/api/galaxy/content/validated/
+token=
