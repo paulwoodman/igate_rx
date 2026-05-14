@@ -1,8 +1,1 @@
----
-collections:
-  - name: ansible.controller
-  - name: ansible.eda
-  - name: ansible.hub
-  - name: ansible.platform
-  - name: infra.aap_configuration
-  - name: infra.aap_configuration_extended
+https://console.redhat.com/ansible/automation-hub/collections/validated/infra/aap_configuration_extended/documentation/role/filetree_create?version=
